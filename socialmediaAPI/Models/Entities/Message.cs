@@ -18,9 +18,14 @@ namespace socialmediaAPI.Models.Entities
         public string? ReplyToId { get; set; }
         public Dictionary<string,string?>? FileUrls { get; set; }
 
+        [BsonIgnoreIfNull]
+        public string? CallRoomUrl { get; set; }
+
+
         public Message()
         {
             Id = string.Empty;
+            SendTime = DateTime.Now;
         }
 
         public static string GetFieldName<T>(Expression<Func<Message, T>> expression)

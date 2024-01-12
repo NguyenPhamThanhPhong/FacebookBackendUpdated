@@ -43,7 +43,7 @@ namespace socialmediaAPI.Repositories.Repos
         public async Task<IEnumerable<Conversation>> GetbyIds(IEnumerable<string> ids,int skip)
         {
             var filter = Builders<Conversation>.Filter.In(c => c.ID, ids);
-            var sort = Builders<Conversation>.Sort.Descending(c => c.RecentMessage.RecentTime);
+            var sort = Builders<Conversation>.Sort.Descending(c => c.RecentTime);
             return await _conversationCollection.Find(filter).Sort(sort).Skip(skip).Limit(50).ToListAsync();
         }
 

@@ -23,7 +23,7 @@ namespace socialmediaAPI.Repositories.Repos
         {
             await _messageCollection.InsertOneAsync(message);
             var conversationFilter = Builders<Conversation>.Filter.Eq(c => c.ID, message.ConversationId);
-            var converationUpdate = Builders<Conversation>.Update.Push(c => c.MessageIds, message.Id);
+            var converationUpdate = Builders<Conversation>.Update.Push(c => c.MessageIds, message.Id).Set(s => s.RecentMessage, message.Content ?? "");
             await _conversationCollection.UpdateOneAsync(conversationFilter, converationUpdate);
 
         }
@@ -32,7 +32,7 @@ namespace socialmediaAPI.Repositories.Repos
         {
             var deletedMessage = await _messageCollection.FindOneAndDeleteAsync(d=>d.Id== id);
             var conversationFilter = Builders<Conversation>.Filter.Eq(c => c.ID,id);
-            var converationUpdate = Builders<Conversation>.Update.Pull(c => c.MessageIds, deletedMessage.Id);
+            var converationUpdate = Builders<Conversation>.Update.Pull(c => c.MessageIds, deletedMessage.Id).Set(s => s.RecentMessage, "");
             await _conversationCollection.UpdateOneAsync(conversationFilter, converationUpdate);
             return deletedMessage;
         }
@@ -72,7 +72,10 @@ namespace socialmediaAPI.Repositories.Repos
         {
             var filter = Builders<Message>.Filter.Eq(p => p.Id, id);
             var update = Builders<Message>.Update.Set(c => c.Content, content);
-            await _messageCollection.UpdateOneAsync(filter, update);
+            var message = await _messageCollection.FindOneAndUpdateAsync(filter, update);
+            var conversationFilter = Builders<Conversation>.Filter.Eq(c => c.ID, message.ConversationId);
+            var converationUpdate = Builders<Conversation>.Update.Push(c => c.MessageIds, message.Id).Set(s => s.RecentMessage, message.Content ?? "");
+            await _conversationCollection.UpdateOneAsync(conversationFilter, converationUpdate);
         }
     }
 }

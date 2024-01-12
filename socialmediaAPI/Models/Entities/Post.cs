@@ -8,11 +8,9 @@ namespace socialmediaAPI.Models.Entities
     [BsonIgnoreExtraElements]
     public class Post
     {
-#pragma warning disable CS8618
         [BsonId]
         [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
         public string Id { get; set; }
-        public string Title { get; set; }
         public string Content { get; set; }
         public string? SharedPost { get; set; }
         public Dictionary<string, string?>? FileUrls { get; set; }
@@ -22,6 +20,10 @@ namespace socialmediaAPI.Models.Entities
         public Post()
         {
             Id = string.Empty;
+            Content = string.Empty;
+            SharedPost = string.Empty;
+            Owner = new OwnerRepresentation();
+
             Likes = new List<LikeRepresentation>();
             CommentIds = new List<string>();
         }

@@ -1,4 +1,5 @@
 using socialmediaAPI.Configs;
+using socialmediaAPI.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseCors();
+app.UseRouting();
+
+
 
 app.UseAuthentication();
 
@@ -24,6 +28,12 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapHub<ChatHub>("/chathub");
+    endpoints.MapControllers();
+});
+
+app.Run();
 
 app.Run();

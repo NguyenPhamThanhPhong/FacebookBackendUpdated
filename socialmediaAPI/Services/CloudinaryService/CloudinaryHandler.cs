@@ -143,8 +143,6 @@ namespace socialmediaAPI.Services.CloudinaryService
             Uri uri;
             if (Uri.TryCreate(cloudinaryUrl, UriKind.Absolute, out uri))
             {
-                // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/{resource_type}/{upload_type}/{version}/{public_id}/{format}
-                // Extract the part after "upload/" and before the version, which is the public_id
 
                 const string uploadPathSegment = "upload/";
 

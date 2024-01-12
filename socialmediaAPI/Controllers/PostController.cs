@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Driver;
 using socialmediaAPI.Configs;
 using socialmediaAPI.Models.Embeded.Post;
 using socialmediaAPI.Models.Entities;
@@ -16,13 +17,15 @@ namespace socialmediaAPI.Controllers
         private readonly IPostRepository _postRepository;
         private readonly CloudinaryHandler _cloudinaryHandler;
         private readonly string _postFolderName;
+        private readonly IMongoCollection<Post> _postCollection;
 
-        public PostController(IPostRepository postRepository, 
+        public PostController(IPostRepository postRepository, DatabaseConfigs databaseConfigs,
             CloudinaryHandler cloudinaryHandler,CloudinaryConfigs cloudinaryConfigs)
         {
             _postRepository = postRepository;
             _cloudinaryHandler = cloudinaryHandler;
             _postFolderName = cloudinaryConfigs.PostFolderName;
+            _postCollection = databaseConfigs.PostCollection;
         }
         [HttpPost("/post-create")]
         public async Task<IActionResult> Create([FromForm] CreatePostRequest request )
@@ -39,17 +42,9 @@ namespace socialmediaAPI.Controllers
             await _postRepository.CreatePost(post);
             return Ok(post);
         }
-        [HttpPost("/post-update-string-field/{id}")]
-        public async Task<IActionResult> UpdateParameters(string id, [FromBody] List<UpdateParameter> parameters)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest("invalid modelstate");
-            await _postRepository.UpdateStringFields(id, parameters);
-            return Ok("updated");
-        }
 
         [HttpPost("/post-like-unlike/{id}/{updateAction}")]
-        public async Task<IActionResult> UpdateLikes(string id, UpdateAction updateAction, LikeRepresentation likeRepresentation )
+        public async Task<IActionResult> UpdateLikes(string id, UpdateAction updateAction,[FromBody] LikeRepresentation likeRepresentation )
         {
             if (!ModelState.IsValid || updateAction == UpdateAction.set)
                 return BadRequest("invalid modelstate");
@@ -58,7 +53,7 @@ namespace socialmediaAPI.Controllers
             return Ok("updated");
         }
 
-        [HttpPost("/post-get-many")]
+        [HttpPost("/post-get-from-ids")]
         public async Task<IActionResult> Get([FromBody] List<string> ids)
         {
             if (!ModelState.IsValid)
@@ -66,30 +61,24 @@ namespace socialmediaAPI.Controllers
             var posts = await _postRepository.GetbyIds(ids);
             return Ok(posts);
         }
-        [HttpPut("/post-update-files/{id}")]
-        public async Task<IActionResult> UpdateImages(string id, [FromForm] UpdateFilesRequest request)
+        [HttpPost("/post-update/{id}")]
+        public async Task<IActionResult> UpdateImages(string id, [FromForm] UpdatePostRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest("invalid modelstate");
-            if(request.prevUrls!=null)
-                foreach(var prevUrl in request.prevUrls)
-                {
-                    Console.WriteLine(prevUrl);
-                    await _cloudinaryHandler.Delete(prevUrl);
-                }
-            if (request.files == null)
-                return Ok("deleted files");
-            var fileUrls = await _cloudinaryHandler.UploadImages(request.files,_postFolderName);
-            var parameter = new UpdateParameter()
-            {
-                FieldName = Post.GetFieldName(p => p.FileUrls),
-                Value = fileUrls,
-                updateAction = UpdateAction.set
-            };
-            await _postRepository.UpdatebyParameters(id, new List<UpdateParameter> { parameter });
+            if (request.deleteUrls != null)
+                await _cloudinaryHandler.DeleteMany(request.deleteUrls);
+
+            var fileUrls = request.keepUrls;
+            if (request.Files != null)
+             fileUrls = await _cloudinaryHandler.UploadImages(request.Files,_postFolderName);
+
+            var filter = Builders<Post>.Filter.Eq(s=>s.Id,id);
+            var update = Builders<Post>.Update.Set(s=>s.Content,request.Content).Set(s=>s.FileUrls,fileUrls);
+            await _postCollection.UpdateOneAsync(filter, update);
             return Ok("updated");
         }
-        [HttpDelete("/delete/{id}")]
+        [HttpDelete("/post-delete/{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             if (!ModelState.IsValid)
@@ -105,3 +94,11 @@ namespace socialmediaAPI.Controllers
 
     }
 }
+//[HttpPost("/post-update-string-field/{id}")]
+//public async Task<IActionResult> UpdateParameters(string id, [FromBody] List<UpdateParameter> parameters)
+//{
+//    if (!ModelState.IsValid)
+//        return BadRequest("invalid modelstate");
+//    await _postRepository.UpdateStringFields(id, parameters);
+//    return Ok("updated");
+//}

@@ -41,7 +41,7 @@ namespace socialmediaAPI.Repositories.Repos
         public async Task<IEnumerable<Comment>> GetfromIds(IEnumerable<string> ids, int skip)
         {
             var filter = Builders<Comment>.Filter.In(s => s.Id, ids);
-            var sort = Builders<Comment>.Sort.Descending(s => s.ChildCommentIds.Count);
+            var sort = Builders<Comment>.Sort.Descending(s => s.CommentTime);
             return await _commentCollection.Find(filter).Sort(sort).Limit(skip).ToListAsync();
         }
 

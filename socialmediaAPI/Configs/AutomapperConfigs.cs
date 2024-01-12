@@ -11,7 +11,6 @@ namespace socialmediaAPI.Configs
         public AutomapperConfigs()
         {
             CreateMap<User, UserDTO>();
-            CreateMap<UpdateLikeRequest, LikeRepresentation>();
             CreateMap<ConversationCreateRequest, Conversation>();
             CreateMap<MessageCreateRequest, Message>();
         }

@@ -1,11 +1,15 @@
 ﻿using AutoMapper;
+using MailKit.Search;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using socialmediaAPI.Configs;
 using socialmediaAPI.Models.Entities;
 using socialmediaAPI.Repositories.Interface;
 using socialmediaAPI.RequestsResponses.Requests;
 using socialmediaAPI.Services.CloudinaryService;
+using System.Text.RegularExpressions;
 
 namespace socialmediaAPI.Controllers
 {
@@ -17,17 +21,19 @@ namespace socialmediaAPI.Controllers
         private readonly CloudinaryHandler _cloudinaryHandler;
         private readonly IMapper _mapper;
         private readonly string _messageFolderName;
+        private readonly IMongoCollection<Message> _messageCollection;
 
         public MessageController(IMessageRepository messageRepository, 
-            CloudinaryHandler cloudinaryHandler, IMapper mapper,
+            CloudinaryHandler cloudinaryHandler, IMapper mapper, DatabaseConfigs databaseConfigs,
             CloudinaryConfigs cloudinaryConfigs)
         {
             _messageRepository = messageRepository;
             _cloudinaryHandler = cloudinaryHandler;
             _mapper = mapper;
             _messageFolderName = cloudinaryConfigs.MessageFolderName;
+            _messageCollection = databaseConfigs.MessageCollection;
         }
-        [HttpPost("/send-message")]
+        [HttpPost("/message-send")]
         public async Task<IActionResult> Create([FromForm] MessageCreateRequest request)
         {
             if (!ModelState.IsValid)
@@ -39,20 +45,19 @@ namespace socialmediaAPI.Controllers
             return Ok(message);
         }
 
-        [HttpDelete("/delete-message")]
+        [HttpDelete("/message-delete")]
         public async Task<IActionResult> Edit(string id)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
             var deletedMessage  = await _messageRepository.Delete(id);
             if (deletedMessage.FileUrls != null)
-                foreach (var item in deletedMessage.FileUrls)
-                    await _cloudinaryHandler.Delete(item.Value);
+                await _cloudinaryHandler.DeleteMany(deletedMessage.FileUrls.Values.ToList());
 
             return Ok($"delete state is {deletedMessage!=null}");
         }
 
-        [HttpPost("/get-messages/{skip}")]
+        [HttpPost("/message-get-many/{skip}")]
         public async Task<IActionResult> GetMany([FromBody] List<string> messageIds, int skip)
         {
             if (!ModelState.IsValid)
@@ -60,5 +65,27 @@ namespace socialmediaAPI.Controllers
             var messages = await _messageRepository.GetbyIds(messageIds, skip);
             return Ok(messages);
         }
+        [HttpPost("/message-search")]
+        public async Task<IActionResult> GetSearch([FromBody] string search)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+            var pattern = new BsonRegularExpression(new Regex(Regex.Escape(search), RegexOptions.IgnoreCase));
+
+            var filter = Builders<Message>.Filter.Regex(msg => msg.Content, pattern);
+            var messages = await _messageCollection.Find(filter).ToListAsync();
+            return Ok(messages);
+        }
+
     }
 }
+//[HttpPost("/message-update")]
+//public async Task<IActionResult> UpdateMessage(string id, [FromBody] string content)
+//{
+//    if (!ModelState.IsValid)
+//        return BadRequest();
+//    var filter = Builders<Message>.Filter.Eq(s=>s.Id, id);
+//    var update = Builders<Message>.Update.Set(s=>s.Content, content);
+//    await _messageRepository.UpdateContent()
+//    return Ok("updated");
+//}

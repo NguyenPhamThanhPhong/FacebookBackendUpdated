@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace socialmediaAPI.Models.Entities
 {
+    [BsonIgnoreExtraElements]
     public class Conversation
     {
         [BsonId]
@@ -14,9 +15,8 @@ namespace socialmediaAPI.Models.Entities
         public List<string>? AdminIDs { get; set; }
         public List<string>? ParticipantIds { get; set; }
         public bool IsGroup { get; set; }
-        public List<string>? Blockers { get; set; }
-        public Dictionary<string,string> Nicknames { get; set; }
-        public MessageDisplay RecentMessage { get; set; }
+        public DateTime RecentTime { get; set; }
+        public string RecentMessage { get; set; }
         public List<string> MessageIds { get; set; }
 
         public Conversation()
@@ -25,10 +25,9 @@ namespace socialmediaAPI.Models.Entities
             AdminIDs = new List<string>();
             ParticipantIds = new List<string>();
             IsGroup = false;
-            Blockers = new List<string>();
-            Nicknames = new Dictionary<string,string>();
-            RecentMessage = new MessageDisplay();
             MessageIds = new List<string>();
+            RecentMessage = string.Empty;
+            RecentTime = DateTime.Now;
         }
     }
     public class MessageDisplay

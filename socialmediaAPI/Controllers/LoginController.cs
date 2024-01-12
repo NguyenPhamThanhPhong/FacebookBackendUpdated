@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using socialmediaAPI.Services.Authentication;
 using socialmediaAPI.Services.CloudinaryService;
 using socialmediaAPI.Services.SMTP;
 using socialmediaAPI.Services.Validators;
+using System.Security.Claims;
 
 namespace socialmediaAPI.Controllers
 {
@@ -40,13 +42,13 @@ namespace socialmediaAPI.Controllers
         }
 
         [HttpPost("/register")]
-        public async Task<IActionResult> Register([FromForm] UserRegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] UserRegisterRequest request)
         {
             if(!ModelState.IsValid)
             {
                 return BadRequest("invalid modelstate");
             }
-            if(! await _emailUtil.SendEmailAsync(request.Email,$"Welcome {request.Name} to PhongBook","welcome..."))
+            if(! await _emailUtil.SendEmailAsync(request.Email,$"Welcome {request.Name} to PhongBook","Welcome..."))
             {
                 return BadRequest("email doesn't exists");
             }
@@ -54,11 +56,6 @@ namespace socialmediaAPI.Controllers
             var user = request.ConvertToUser();
             try
             {
-                if(request.File!=null)
-                {
-                    var avatarSet = await _cloudinaryHandler.UploadImages(new List<IFormFile> { request.File }, _userFolderName);
-                    user.PersonalInfo.AvatarUrl = avatarSet.Values.FirstOrDefault();
-                }
                 await _userRepository.Create(user);
             }
             catch (Exception ex)
@@ -84,13 +81,21 @@ namespace socialmediaAPI.Controllers
             };
             Response.Cookies.Append("access_token", accessToken, cookieOptions );
             Response.Cookies.Append("userID", user.ID, cookieOptions);
-            return Ok(user);
+            return Ok(accessToken);
         }
-
+        [Authorize]
         [HttpGet("/login-auto")]
-        public async Task<IActionResult> Login()
+        public async Task<IActionResult> LoginAuto()
         {
-            return Ok("logged in");
+            if (!ModelState.IsValid)
+                return BadRequest();
+            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (id == null)
+                return Unauthorized();
+
+            var user = await _userRepository.GetbyId(id);
+
+            return Ok(user);
         }
 
         [HttpPost("/send-mail-verification")]

@@ -1,4 +1,8 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using socialmediaAPI.Models.Entities;
+using socialmediaAPI.Repositories.Interface;
+using socialmediaAPI.Services.CloudinaryService;
+using System.Text.Json;
 
 namespace socialmediaAPI.Hubs
 {
@@ -6,6 +10,7 @@ namespace socialmediaAPI.Hubs
     {
         public override async Task OnConnectedAsync()
         {
+            Console.WriteLine("user connected");
             var httpContext = Context.GetHttpContext();
             var userId = httpContext?.Request.Cookies["userID"];
             await Groups.AddToGroupAsync(Context.ConnectionId, userId ?? "null");
@@ -24,18 +29,24 @@ namespace socialmediaAPI.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendMessage(string receiverId,string senderId, string message)
+        public async Task SendMessage(List<string> receiverIds, string conversationId, Message message)
         {
-            if (!string.IsNullOrEmpty(receiverId))
-            {
-                // Send the message to a specific user
-                await Clients.Group(receiverId).SendAsync("ReceiveMessage", senderId, message);
-            }
-            else
-            {
-                // Send the message to all clients
-                await Clients.All.SendAsync("ReceiveMessage", senderId, message);
-            }
+            Console.WriteLine(JsonSerializer.Serialize(message));
+            await Clients.All.SendAsync("ReceiveMessage", receiverIds, conversationId, message);
+            await Clients.Caller.SendAsync("MessageStatus", conversationId, message);
         }
+
+        public async Task DeleteMessage(List<string> receiverIds,string conversationId, string messageId)
+        {
+            Console.WriteLine($"data is: ${receiverIds},${conversationId}");
+            await Clients.All.SendAsync("DeleteMessage", receiverIds, conversationId, messageId);
+            await Clients.Caller.SendAsync("MessageStatus", conversationId, messageId);
+        }
+
     }
 }
+//public async Task ReplaceMessage(List<string> receiversIds, string conversationId, string message)
+//{
+//    await Clients.Groups(receiversIds).SendAsync("UpdateMessage", conversationId, message);
+//    await Clients.Caller.SendAsync("MessageStatus", "Success: update Success", conversationId, message);
+//}

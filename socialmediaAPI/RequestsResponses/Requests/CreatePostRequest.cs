@@ -18,7 +18,6 @@ namespace socialmediaAPI.RequestsResponses.Requests
         {
             return new Post()
             {
-                Title = Title,
                 Content = Content,
                 Owner= Owner,
                 SharedPost = ""

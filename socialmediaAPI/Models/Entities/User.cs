@@ -22,7 +22,7 @@ namespace socialmediaAPI.Models.Entities
         public List<string> FriendIds { get; set; }
         public List<string> BlockedIds { get; set; }
         public List<string> PostIds { get; set; }
-        public List<string> ConverationIds { get; set; }
+        public List<string> ConversationIds { get; set; }
         public List<Notification> Notifications { get; set; }
         public VerificationTicket EmailVerification { get; set; }
         public User()
@@ -34,6 +34,7 @@ namespace socialmediaAPI.Models.Entities
             BlockedIds = new List<string>();
             PostIds = new List<string>();
             Notifications = new List<Notification>();
+            ConversationIds = new List<string>();
         }
         public static string GetFieldName<T>(Expression<Func<User, T>> expression)
         {

@@ -5,6 +5,7 @@ using socialmediaAPI.Configs;
 using socialmediaAPI.Models.Entities;
 using socialmediaAPI.Repositories.Interface;
 using socialmediaAPI.RequestsResponses.Requests;
+using System.Text.Json;
 
 namespace socialmediaAPI.Repositories.Repos
 {
@@ -31,8 +32,8 @@ namespace socialmediaAPI.Repositories.Repos
         public async Task<Message> Delete(string id)
         {
             var deletedMessage = await _messageCollection.FindOneAndDeleteAsync(d=>d.Id== id);
-            var conversationFilter = Builders<Conversation>.Filter.Eq(c => c.ID,id);
-            var converationUpdate = Builders<Conversation>.Update.Pull(c => c.MessageIds, deletedMessage.Id).Set(s => s.RecentMessage, "");
+            var conversationFilter = Builders<Conversation>.Filter.Eq(c => c.ID,deletedMessage.ConversationId);
+            var converationUpdate = Builders<Conversation>.Update.Pull(c => c.MessageIds, id).Set(s => s.RecentMessage, "");
             await _conversationCollection.UpdateOneAsync(conversationFilter, converationUpdate);
             return deletedMessage;
         }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Driver;
 using socialmediaAPI.Configs;
@@ -13,6 +14,7 @@ using socialmediaAPI.Repositories.Repos;
 using socialmediaAPI.RequestsResponses.Requests;
 using socialmediaAPI.Services.CloudinaryService;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace socialmediaAPI.Controllers
 {
@@ -51,11 +53,44 @@ namespace socialmediaAPI.Controllers
         [HttpPost("/get-from-ids")]
         public async Task<IActionResult> GetFromIds([FromBody] List<string> ids)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             var filter = Builders<User>.Filter.In(s => s.ID, ids);
             var users = await _userCollection.Find(filter).ToListAsync();
             return Ok(users);
+        }
+
+
+        [HttpPost("/friend-suggest")]
+        public async Task<IActionResult> SuggestFromIds([FromBody] List<string> ids)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var filter = Builders<User>.Filter.Nin(u => u.ID, ids);
+            var pipeline = new BsonDocument[]
+            {
+                new BsonDocument("$match", filter.ToBsonDocument()),
+                new BsonDocument("$sample", new BsonDocument("size", 40))
+            };
+            var randomUser = await _userCollection.Aggregate<User>(pipeline).FirstOrDefaultAsync();
+            if(randomUser!=null)
+            {
+                return Ok(randomUser);
+            }
+            return Ok(new List<User>());
+        }
+
+        [HttpPost("/friend-search")]
+        public async Task<IActionResult> GetPeople([FromBody] string search)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var pattern = new BsonRegularExpression(new Regex(Regex.Escape(search), RegexOptions.IgnoreCase));
+
+            var filter = Builders<User>.Filter.Regex(s=>s.PersonalInfo.Name,pattern);
+            var people = await _userCollection.Find(filter).ToListAsync();
+            var peopleDTO = _mapper.Map<List<UserDTO>>(people);
+            return Ok(peopleDTO);
         }
 
         [HttpGet]
@@ -67,17 +102,18 @@ namespace socialmediaAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest($"invalid model state");
             var parameter = new UpdateParameter(Models.Entities.User.GetFieldName(u => u.AuthenticationInfo.Email), email, UpdateAction.set);
-            await _userRepository.UpdatebyParameters(id, new List<UpdateParameter> { parameter});
+            await _userRepository.UpdatebyParameters(id, new List<UpdateParameter> { parameter });
             return Ok("updated");
         }
-        [HttpPost("/update-password/{id}")]
-        public async Task<IActionResult> UpdatePassword(string id, [FromBody] string password)
+        [HttpPost("/update-password/{username}")]
+        public async Task<IActionResult> UpdatePassword(string username, [FromBody] string password)
         {
             if (!ModelState.IsValid)
                 return BadRequest($"invalid model state");
-            var parameter = new UpdateParameter(Models.Entities.User.GetFieldName(u => u.AuthenticationInfo.Password), password, UpdateAction.set);
-            await _userRepository.UpdatebyParameters(id, new List<UpdateParameter> { parameter });
-            return Ok("updated");
+            var filter = Builders<User>.Filter.Eq(s=>s.AuthenticationInfo.Username,username);
+            var update = Builders<User>.Update.Set(s=>s.AuthenticationInfo.Password,password);
+            await _userCollection.UpdateOneAsync(filter, update);
+            return Ok();
         }
         #endregion
 
@@ -95,7 +131,7 @@ namespace socialmediaAPI.Controllers
             var filter = Builders<User>.Filter.Eq(s => s.ID, id);
             var update = Builders<User>.Update.Set(s => s.PersonalInfo, personalInfo);
             var result = await _userCollection.UpdateOneAsync(filter, update);
-            if(result.ModifiedCount>0)
+            if (result.ModifiedCount > 0)
                 return Ok("updated");
             return BadRequest("failed to update");
 
@@ -124,7 +160,7 @@ namespace socialmediaAPI.Controllers
                 return Unauthorized("no id found");
             var filter = Builders<User>.Filter.Eq(s => s.ID, targetId);
             var selfFilter = Builders<User>.Filter.Eq(s => s.ID, selfId);
-            if(option==UpdateAction.push)
+            if (option == UpdateAction.push)
             {
                 var updateTarget = Builders<User>.Update.Push(s => s.FriendRequestIds, selfId);
                 var updateSelf = Builders<User>.Update.Push(s => s.FriendWaitIds, targetId);
@@ -143,7 +179,7 @@ namespace socialmediaAPI.Controllers
 
         [Authorize]
         [HttpPost("/user-unfriend-accept-request/{targetId}/{option}")]
-        public async Task<IActionResult> UpdateFriendList(string targetId,ConversationCreateRequestFriend request, UpdateAction option)
+        public async Task<IActionResult> UpdateFriendList(string targetId, ConversationCreateRequestFriend request, UpdateAction option)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
@@ -188,7 +224,7 @@ namespace socialmediaAPI.Controllers
             if (selfId == null)
                 return Unauthorized("no id found");
             var selfFilter = Builders<User>.Filter.Eq(s => s.ID, selfId);
-            if (option==UpdateAction.push)
+            if (option == UpdateAction.push)
             {
                 var selfUpdate = Builders<User>.Update.Push(s => s.BlockedIds, targetId);
                 await _userCollection.UpdateOneAsync(selfFilter, selfUpdate);

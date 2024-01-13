@@ -52,15 +52,14 @@ namespace socialmediaAPI.Controllers
             {
                 return BadRequest("email doesn't exists");
             }
-
             var user = request.ConvertToUser();
             try
             {
                 await _userRepository.Create(user);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest("user already existed: \n"+ ex.Message);
+                return BadRequest("user already existed: \n");
             }
             return Ok(user);
         }
@@ -99,14 +98,13 @@ namespace socialmediaAPI.Controllers
         }
 
         [HttpPost("/send-mail-verification")]
-        public async Task<IActionResult> SendVerification([FromBody] LoginRequest request)
+        public async Task<IActionResult> SendVerification([FromBody] string username)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
-            var user = await _userRepository.GetbyUsername(request.Username);
-            if (user == null || !(user.AuthenticationInfo.Password == request.Password))
-                return BadRequest("Incorrect username or password");
-
+            var user = await _userRepository.GetbyUsername(username);
+            if (user == null)
+                return BadRequest("Incorrect username");
             Random random = new Random();
             string codeValue = random.Next(100000, 999999).ToString();
             var result = await _emailUtil.SendEmailAsync(user.AuthenticationInfo.Email, 
@@ -117,14 +115,14 @@ namespace socialmediaAPI.Controllers
                 ExpiredTime = DateTime.UtcNow.AddMinutes(15)
             };
             await _userRepository.UpdatebyInstance(user);
-            return Ok($"sending result is {result}");
+            return Ok(codeValue);
         }
-        [HttpPost("/confirm-mail/{id}")]
-        public async Task<IActionResult> ConfirmEmail(string id,[FromBody]string code)
+        [HttpPost("/confirm-mail/{username}")]
+        public async Task<IActionResult> ConfirmEmail(string username,[FromBody]string code)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
-            var user = await _userRepository.GetbyId(id);
+            var user = await _userRepository.GetbyUsername(username);
             if (user == null)
                 return BadRequest("invalid user");
             if (user.EmailVerification != null && user.EmailVerification.Code == code)

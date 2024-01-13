@@ -100,7 +100,7 @@ namespace socialmediaAPI.Configs
             {
                 options.AddDefaultPolicy(builder =>
                 {
-                    builder.WithOrigins("http://localhost:3000")
+                    builder.WithOrigins("http://localhost:3000", "http://192.168.1.4:3000", "http://192.168.1.7:3000")
                            .AllowAnyHeader()
                            .AllowAnyMethod()
                            .AllowCredentials();

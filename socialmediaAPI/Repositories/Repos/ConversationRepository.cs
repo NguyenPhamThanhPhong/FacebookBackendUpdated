@@ -25,8 +25,8 @@ namespace socialmediaAPI.Repositories.Repos
         public async Task Create(Conversation conversation)
         {
             await _conversationCollection.InsertOneAsync(conversation);
-            var filter = Builders<User>.Filter.Eq(u => u.ConverationIds, conversation.ParticipantIds);
-            var update = Builders<User>.Update.Push(u => u.ConverationIds, conversation.ID);
+            var filter = Builders<User>.Filter.In(u => u.ID, conversation.ParticipantIds);
+            var update = Builders<User>.Update.Push(u => u.ConversationIds, conversation.ID);
             await _userCollection.UpdateManyAsync(filter, update);
         }
 

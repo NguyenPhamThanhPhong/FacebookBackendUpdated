@@ -46,7 +46,7 @@ namespace socialmediaAPI.Controllers
         }
 
         [HttpDelete("/message-delete")]
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Delete(string id)
         {
             if (!ModelState.IsValid)
                 return BadRequest();

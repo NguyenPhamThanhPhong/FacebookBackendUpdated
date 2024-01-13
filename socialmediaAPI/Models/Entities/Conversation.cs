@@ -19,6 +19,9 @@ namespace socialmediaAPI.Models.Entities
         public string RecentMessage { get; set; }
         public List<string> MessageIds { get; set; }
 
+        [BsonIgnore]
+        public List<Message> Messages { get; set; }
+
         public Conversation()
         {
             ID = string.Empty;
@@ -28,6 +31,7 @@ namespace socialmediaAPI.Models.Entities
             MessageIds = new List<string>();
             RecentMessage = string.Empty;
             RecentTime = DateTime.Now;
+            Messages = new List<Message>();
         }
     }
     public class MessageDisplay

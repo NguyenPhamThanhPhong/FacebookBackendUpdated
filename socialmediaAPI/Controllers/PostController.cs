@@ -84,11 +84,8 @@ namespace socialmediaAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest("invalid modelstate");
             var deleted = await _postRepository.Delete(id);
-            if(deleted.FileUrls!=null)
-                foreach (var item in deleted.FileUrls)
-                {
-                    await _cloudinaryHandler.Delete(item.Value);
-                }
+            if (deleted.FileUrls != null)
+                await _cloudinaryHandler.DeleteMany(deleted.FileUrls.Values.ToList());
             return Ok(("deleted", deleted));
         }
 

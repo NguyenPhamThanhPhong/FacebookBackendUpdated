@@ -43,22 +43,13 @@ namespace socialmediaAPI.Controllers
             return Ok(conversation);
         }
 
-        //[HttpPost("/conversation-update-string-fields/{id}")]
-        //public async Task<IActionResult> UpdateParameters([FromBody] List<UpdateParameter> parameters, string id)
-        //{
-        //    if (!ModelState.IsValid)
-        //        return BadRequest("invalid modelstate");
-        //    await _conversationRepository.UpdateStringFields(id, parameters);
-        //    return Ok("updated");
-        //}
         [HttpPost("/conversation-get-from-ids/{skip}")]
         public async Task<IActionResult> GetMany([FromBody] List<string> ids, int skip)
         {
             if (!ModelState.IsValid)
                 return BadRequest("invalid modelstate");
             var conversations = await _conversationRepository.GetbyIds(ids, skip);
-            var messages = await _messageRepository.GetbyIds(ids, skip);
-            return Ok(new { conversations, messages });
+            return Ok(conversations);
         }
 
         [HttpPost("/conversation-search")]

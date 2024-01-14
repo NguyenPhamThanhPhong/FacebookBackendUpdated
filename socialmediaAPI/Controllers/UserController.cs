@@ -169,34 +169,54 @@ namespace socialmediaAPI.Controllers
             }
             else
             {
-                var update = Builders<User>.Update.Pull(s => s.FriendRequestIds, selfId);
+                var updateTarget = Builders<User>.Update.Pull(s => s.FriendRequestIds, selfId);
                 var updateSelf = Builders<User>.Update.Pull(s => s.FriendWaitIds, targetId);
-                await Task.WhenAll(_userCollection.UpdateOneAsync(filter, update),
+                await Task.WhenAll(_userCollection.UpdateOneAsync(filter, updateTarget),
                     _userCollection.UpdateOneAsync(selfFilter, updateSelf));
             }
-            return Ok();
+            return Ok(new {selfId=selfId,targetId=targetId});
         }
 
         [Authorize]
-        [HttpPost("/user-unfriend-accept-request/{targetId}/{option}")]
-        public async Task<IActionResult> UpdateFriendList(string targetId, ConversationCreateRequestFriend request, UpdateAction option)
+        [HttpPost("/user-reject-friend-request/{targetId}")]
+        public async Task<IActionResult> RejectFriendRequest(string targetId)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
             var selfId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (selfId == null)
                 return Unauthorized("no id found");
+            var targetFilter = Builders<User>.Filter.Eq(s => s.ID, targetId);
+            var selfFilter = Builders<User>.Filter.Eq(s => s.ID, selfId);
+            var updateTarget = Builders<User>.Update.Pull(s => s.FriendWaitIds, selfId).Pull(s => s.FriendRequestIds, selfId);
+            var updateSelf = Builders<User>.Update.Pull(s => s.FriendRequestIds, targetId).Pull(s => s.FriendWaitIds, targetId);
+            await Task.WhenAll(_userCollection.UpdateOneAsync(selfFilter, updateSelf),
+                _userCollection.UpdateOneAsync(targetFilter, updateTarget));
+            return Ok(new { selfId = selfId, targetId = targetId });
+        }
+
+        [Authorize]
+        [HttpPost("/user-unfriend-accept-request/{targetId}/{option}")]
+        public async Task<IActionResult> UpdateFriendList(string targetId,[FromBody] ConversationCreateRequestFriend? request, UpdateAction option)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+            var selfId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Console.WriteLine(targetId + request?.Name??"anonymous");
+            Console.WriteLine(selfId);
+            if (selfId == null)
+                return Unauthorized("no id found");
             var targetfilter = Builders<User>.Filter.Eq(s => s.ID, targetId);
             var selfFilter = Builders<User>.Filter.Eq(s => s.ID, selfId);
             if (option == UpdateAction.push) // accept friend request
             {
-                var targetUpdate = Builders<User>.Update.Pull(s => s.FriendWaitIds, targetId).Push(s => s.FriendIds, targetId);
-                var updateSelf = Builders<User>.Update.Pull(s => s.FriendRequestIds, targetId).Push(s => s.FriendIds, targetId);
+                var targetUpdate = Builders<User>.Update.Pull(s => s.FriendRequestIds, selfId).Pull(s=>s.FriendWaitIds,selfId).Push(s => s.FriendIds, selfId);
+                var updateSelf = Builders<User>.Update.Pull(s => s.FriendWaitIds, targetId).Pull(s=>s.FriendRequestIds,targetId).Push(s => s.FriendIds, targetId);
                 Conversation conversation = new Conversation()
                 {
-                    Name = request.Name,
+                    Name = request?.Name?? "ẩn danh",
                     AdminIDs = new List<string> { targetId, selfId },
-                    AvatarUrl = request.AvatarUrl,
+                    AvatarUrl = request?.AvatarUrl ?? "",
                     IsGroup = false,
                     ParticipantIds = new List<string> { selfId, targetId },
                     MessageIds = new List<string>(),
@@ -204,16 +224,16 @@ namespace socialmediaAPI.Controllers
                     RecentTime = DateTime.Now
                 };
                 await Task.WhenAll(_userCollection.UpdateOneAsync(targetfilter, targetUpdate),
-                    _userCollection.UpdateOneAsync(selfFilter, updateSelf));
+                    _userCollection.UpdateOneAsync(selfFilter, updateSelf),_conversationRepository.Create(conversation));
             }
             else // un-friend
             {
-                var targetUpdate = Builders<User>.Update.Pull(s => s.FriendWaitIds, selfId);
-                var updateSelf = Builders<User>.Update.Pull(s => s.FriendRequestIds, targetId);
+                var targetUpdate = Builders<User>.Update.Pull(s => s.FriendIds, selfId);
+                var updateSelf = Builders<User>.Update.Pull(s => s.FriendIds, targetId);
                 await Task.WhenAll(_userCollection.UpdateOneAsync(targetfilter, targetUpdate),
                     _userCollection.UpdateOneAsync(selfFilter, updateSelf));
             }
-            return Ok();
+            return Ok(new { selfId = selfId, targetId = targetId });
         }
 
         [Authorize]

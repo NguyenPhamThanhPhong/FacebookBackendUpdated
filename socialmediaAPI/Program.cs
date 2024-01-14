@@ -36,4 +36,3 @@ app.UseEndpoints(endpoints =>
 
 app.Run();
 
-app.Run();

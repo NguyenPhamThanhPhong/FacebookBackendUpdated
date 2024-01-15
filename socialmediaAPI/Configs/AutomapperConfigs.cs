@@ -13,6 +13,7 @@ namespace socialmediaAPI.Configs
             CreateMap<User, UserDTO>();
             CreateMap<ConversationCreateRequest, Conversation>();
             CreateMap<MessageCreateRequest, Message>();
+            CreateMap<CreateCommentRequest,Comment>();
         }
     }
 }

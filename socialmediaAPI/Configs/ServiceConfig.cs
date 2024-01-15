@@ -85,8 +85,6 @@ namespace socialmediaAPI.Configs
             config.Bind("SMTPConfiguration", smtpConfigs);
             services.AddSingleton(smtpConfigs);
             services.AddSingleton<EmailUtil>();
-            //Automapper
-            services.AddAutoMapper(typeof(AutomapperConfigs));
             //Validator
             services.AddTransient<UserValidator>();
             //JSON serialization
@@ -100,7 +98,7 @@ namespace socialmediaAPI.Configs
             {
                 options.AddDefaultPolicy(builder =>
                 {
-                    builder.WithOrigins("http://localhost:3000", "http://192.168.1.3:3000", "http://192.168.1.2:3000")
+                    builder.WithOrigins("http://localhost:3000", "http://192.168.1.2:3000")
                            .AllowAnyHeader()
                            .AllowAnyMethod()
                            .AllowCredentials();

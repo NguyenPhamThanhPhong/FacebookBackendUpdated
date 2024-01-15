@@ -29,6 +29,9 @@ namespace socialmediaAPI.Repositories.Repos
         public async Task<Comment> Delete(string id)
         {
             var result = await _commentCollection.FindOneAndDeleteAsync(s => s.Id == id);
+            var filterPost = Builders<Post>.Filter.Eq(s=>s.Id, result.PostId);
+            var updatePost = Builders<Post>.Update.Pull(s => s.CommentIds, result.Id);
+            await _postCollection.UpdateOneAsync(filterPost, updatePost);
             return result;
         }
 

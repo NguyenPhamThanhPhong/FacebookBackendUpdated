@@ -8,5 +8,18 @@ namespace socialmediaAPI.Models.Embeded.Post
     {
         public string UserId { get; set; }
         public Emoji Emo { get; set; }
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+            return UserId == ((LikeRepresentation)obj).UserId;
+        }
+
+        public override int GetHashCode()
+        {
+            return UserId.GetHashCode();
+        }
     }
 }

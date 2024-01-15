@@ -23,7 +23,8 @@ namespace socialmediaAPI.Models.Entities
             PostId = string.Empty;
             CommentTime = DateTime.UtcNow;
             Content = string.Empty;
-            FileUrls = new Dictionary<string,string?>(); 
+            FileUrls = new Dictionary<string,string?>();
+            isEdited = false;
         }
         public static string GetFieldName<T>(Expression<Func<Comment, T>> expression)
         {

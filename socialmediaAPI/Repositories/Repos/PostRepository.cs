@@ -47,10 +47,10 @@ namespace socialmediaAPI.Repositories.Repos
 
         }
 
-        public Task<Post> GetbyIds(IEnumerable<string> ids)
+        public async Task<IEnumerable<Post>> GetbyIds(IEnumerable<string> ids)
         {
             var filter = Builders<Post>.Filter.In(p => p.Id, ids);
-            return _postCollection.Find(filter).FirstOrDefaultAsync();
+            return await _postCollection.Find(filter).ToListAsync();
         }
 
         public Task UpdatebyInstance(Post post)

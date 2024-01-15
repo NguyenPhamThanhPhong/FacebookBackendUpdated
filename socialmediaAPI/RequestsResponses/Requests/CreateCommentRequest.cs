@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
+using socialmediaAPI.Models.Entities;
 
 namespace socialmediaAPI.RequestsResponses.Requests
 {
@@ -13,6 +14,16 @@ namespace socialmediaAPI.RequestsResponses.Requests
         public CreateCommentRequest()
         {
             Content = string.Empty;
+        }
+        public Comment converToComment()
+        {
+            return new Comment
+            {
+                ParentId = ParentId,
+                UserId = UserId,
+                Content = Content,
+                PostId = PostId
+            };
         }
     }
 }

@@ -125,8 +125,13 @@ namespace socialmediaAPI.Controllers
             var personalInfo = request.ConvertToPersonalInformation();
             if (!string.IsNullOrEmpty(request.prevAvatar))
                 await _cloudinaryHandler.Delete(request.prevAvatar);
+            if(!string.IsNullOrEmpty(request.prevPhoto))
+                await _cloudinaryHandler.Delete(request.prevAvatar);
+
             if (request.AvatarFile != null)
                 personalInfo.AvatarUrl = await _cloudinaryHandler.UploadSingleImage(request.AvatarFile, _userFolderName);
+            if (request.CoverPhotoFile != null)
+                personalInfo.CoverPhotoUrl = await _cloudinaryHandler.UploadSingleImage(request.CoverPhotoFile, _userFolderName);
 
             var filter = Builders<User>.Filter.Eq(s => s.ID, id);
             var update = Builders<User>.Update.Set(s => s.PersonalInfo, personalInfo);
@@ -199,6 +204,7 @@ namespace socialmediaAPI.Controllers
         [HttpPost("/user-unfriend-accept-request/{targetId}/{option}")]
         public async Task<IActionResult> UpdateFriendList(string targetId,[FromBody] ConversationCreateRequestFriend? request, UpdateAction option)
         {
+            Console.WriteLine(targetId);
             if (!ModelState.IsValid)
                 return BadRequest();
             var selfId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

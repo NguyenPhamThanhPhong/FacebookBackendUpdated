@@ -7,6 +7,7 @@ using socialmediaAPI.Models.Entities;
 using socialmediaAPI.Repositories.Interface;
 using socialmediaAPI.RequestsResponses.Requests;
 using socialmediaAPI.Services.CloudinaryService;
+using System.Text.Json;
 
 namespace socialmediaAPI.Controllers
 {
@@ -48,8 +49,9 @@ namespace socialmediaAPI.Controllers
         {
             if (!ModelState.IsValid || updateAction == UpdateAction.set)
                 return BadRequest("invalid modelstate");
-            var parameter = new UpdateParameter(Post.GetFieldName(p=>p.Likes),likeRepresentation,updateAction);
-            await _postRepository.UpdatebyParameters(id, new List<UpdateParameter> { parameter });
+            var filter = Builders<Post>.Filter.Eq(s => s.Id, id);
+            var update = Builders<Post>.Update.AddToSet(s => s.Likes, likeRepresentation);
+            await _postCollection.UpdateOneAsync(filter, update);
             return Ok("updated");
         }
 
@@ -59,6 +61,7 @@ namespace socialmediaAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest("invalid modelstate");
             var posts = await _postRepository.GetbyIds(ids);
+            Console.WriteLine(JsonSerializer.Serialize(posts));
             return Ok(posts);
         }
         [HttpPost("/post-update/{id}")]

@@ -14,6 +14,7 @@ namespace socialmediaAPI.Models.Entities
         public string Content { get; set; }
         public string? SharedPost { get; set; }
         public Dictionary<string, string?>? FileUrls { get; set; }
+        public DateTime RecentTime { get; set; }
         public OwnerRepresentation Owner { get; set; }
         public List<LikeRepresentation> Likes { get; set; }
         public List<string> CommentIds { get; set; }
@@ -23,7 +24,7 @@ namespace socialmediaAPI.Models.Entities
             Content = string.Empty;
             SharedPost = string.Empty;
             Owner = new OwnerRepresentation();
-
+            RecentTime = DateTime.Now;
             Likes = new List<LikeRepresentation>();
             CommentIds = new List<string>();
         }

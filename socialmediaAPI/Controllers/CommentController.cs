@@ -7,6 +7,7 @@ using socialmediaAPI.Models.Entities;
 using socialmediaAPI.Repositories.Interface;
 using socialmediaAPI.RequestsResponses.Requests;
 using socialmediaAPI.Services.CloudinaryService;
+using System.Text.Json;
 
 namespace socialmediaAPI.Controllers
 {
@@ -48,6 +49,7 @@ namespace socialmediaAPI.Controllers
         [HttpPost("/comment-create")]
         public async Task<IActionResult> CreateComment([FromForm] CreateCommentRequest request)
         {
+            Console.WriteLine(JsonSerializer.Serialize(request));
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
             var comment = _mapper.Map<Comment>(request);

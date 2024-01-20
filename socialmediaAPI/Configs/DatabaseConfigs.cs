@@ -44,10 +44,10 @@ namespace socialmediaAPI.Configs
         }
         private void CreateUniqueIndex()
         {
-            var indexKeysDefinition = Builders<User>.IndexKeys.Ascending(User.GetFieldName(u=>u.AuthenticationInfo.Username));
-            var indexOptions = new CreateIndexOptions { Unique = true };
+            //var indexKeysDefinition = Builders<User>.IndexKeys.Ascending(User.GetFieldName(u=>u.AuthenticationInfo.Username));
+            //var indexOptions = new CreateIndexOptions { Unique = true };
 
-            UserCollection.Indexes.CreateOne(new CreateIndexModel<User>(indexKeysDefinition, indexOptions));
+            //UserCollection.Indexes.CreateOne(new CreateIndexModel<User>(indexKeysDefinition, indexOptions));
         }
     }
 }

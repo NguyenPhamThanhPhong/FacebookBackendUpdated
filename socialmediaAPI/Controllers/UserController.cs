@@ -15,6 +15,7 @@ using socialmediaAPI.RequestsResponses.Requests;
 using socialmediaAPI.Services.CloudinaryService;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace socialmediaAPI.Controllers
 {
@@ -132,6 +133,10 @@ namespace socialmediaAPI.Controllers
                 personalInfo.AvatarUrl = await _cloudinaryHandler.UploadSingleImage(request.AvatarFile, _userFolderName);
             if (request.CoverPhotoFile != null)
                 personalInfo.CoverPhotoUrl = await _cloudinaryHandler.UploadSingleImage(request.CoverPhotoFile, _userFolderName);
+
+            Console.WriteLine(JsonSerializer.Serialize(request));
+            Console.WriteLine(JsonSerializer.Serialize(personalInfo));
+
 
             var filter = Builders<User>.Filter.Eq(s => s.ID, id);
             var update = Builders<User>.Update.Set(s => s.PersonalInfo, personalInfo);
